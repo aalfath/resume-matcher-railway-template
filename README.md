@@ -63,7 +63,7 @@ By deploying Resume Matcher on Railway, you are one step closer to supporting a 
 * `Dockerfile`: `FROM ghcr.io/srbhr/resume-matcher:1.4.0@sha256:ae84bc6f…` plus the Caddy 2.11.9 binary (also pinned by digest).
 * `railway-start.sh`: hands the volume to the app user, refuses to start without a password of 12+ characters, starts the API, the web app and Caddy, and exits non-zero if any of them stops so Railway's restart policy brings it back.
 * `Caddyfile`: basic auth for everything except `/healthz` (Railway's health check, which answers only when the API and the web app are both up).
-* `chrome-headless-shell`: wraps the image's headless Chromium (used for PDF export) with small-memory flags and makes it the first process the kernel kills when memory runs out, so a failed export never takes the app down.
+* `pdf-memcheck.sh`, `chrome-headless-shell`, `playwright-driver-node`: wrap the image's Playwright driver and headless Chromium (used only for PDF export) with small-memory flags and a memory check. PDF export needs about 1 GB; on a smaller service they refuse to start, so the export fails with an error instead of getting the whole app OOM-killed. Set `CHROMIUM_MIN_MEMORY_MB=0` to skip the check.
 * No `railway.json`: the health check (`/healthz`, 300 s) and restart policy (on failure, 10 retries) are set in the template itself.
 
 See `CHANGELOG.md` for what changed in each version. Resume Matcher itself is licensed Apache-2.0 by its authors.
