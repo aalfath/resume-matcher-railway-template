@@ -13,7 +13,12 @@ USER root
 COPY --from=caddy /usr/bin/caddy /usr/local/bin/caddy
 COPY --chmod=0644 Caddyfile /etc/resume-matcher-railway/Caddyfile
 COPY --chmod=0755 railway-start.sh /usr/local/bin/railway-start.sh
-RUN chmod 0755 /etc/resume-matcher-railway && caddy version
+COPY --chmod=0755 chrome-headless-shell /tmp/chrome-headless-shell
+# PDF export: wrap Playwright's headless Chromium with small-memory flags.
+RUN chmod 0755 /etc/resume-matcher-railway && caddy version \
+ && d="$(dirname /ms-playwright/chromium_headless_shell-*/chrome-headless-shell-linux64/chrome-headless-shell)" \
+ && mv "$d/chrome-headless-shell" "$d/chrome-headless-shell.real" \
+ && mv /tmp/chrome-headless-shell "$d/chrome-headless-shell"
 
 ENV PORT=8080
 
