@@ -1,0 +1,5 @@
+#!/bin/sh
+# Installed in place of Playwright's bundled Node driver (PDF export only): memory
+# check first, then the real driver with a small heap.
+. /usr/local/lib/resume-matcher-railway/pdf-memcheck.sh
+exec "$(dirname "$0")/node.real" --max-old-space-size=96 "$@"

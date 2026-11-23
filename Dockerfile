@@ -13,12 +13,18 @@ USER root
 COPY --from=caddy /usr/bin/caddy /usr/local/bin/caddy
 COPY --chmod=0644 Caddyfile /etc/resume-matcher-railway/Caddyfile
 COPY --chmod=0755 railway-start.sh /usr/local/bin/railway-start.sh
-COPY --chmod=0755 chrome-headless-shell /tmp/chrome-headless-shell
-# PDF export: wrap Playwright's headless Chromium with small-memory flags.
+COPY --chmod=0755 pdf-memcheck.sh /usr/local/lib/resume-matcher-railway/pdf-memcheck.sh
+COPY --chmod=0755 chrome-headless-shell playwright-driver-node /tmp/
+# PDF export: put a memory check (and small-memory flags) in front of Playwright's
+# Node driver and its headless Chromium.
 RUN chmod 0755 /etc/resume-matcher-railway && caddy version \
  && d="$(dirname /ms-playwright/chromium_headless_shell-*/chrome-headless-shell-linux64/chrome-headless-shell)" \
  && mv "$d/chrome-headless-shell" "$d/chrome-headless-shell.real" \
- && mv /tmp/chrome-headless-shell "$d/chrome-headless-shell"
+ && mv /tmp/chrome-headless-shell "$d/chrome-headless-shell" \
+ && n="$(python -c 'import os,playwright;print(os.path.join(os.path.dirname(playwright.__file__),"driver"))')" \
+ && mv "$n/node" "$n/node.real" \
+ && mv /tmp/playwright-driver-node "$n/node" \
+ && "$n/node.real" --version && sh -n "$n/node" && sh -n "$d/chrome-headless-shell"
 
 ENV PORT=8080
 
