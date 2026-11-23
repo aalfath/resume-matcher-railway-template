@@ -1,9 +1,21 @@
 #!/bin/sh
-# Installed in place of Playwright's chrome-headless-shell (PDF export).
-# - Ask the kernel to kill Chromium first when memory runs out, so a PDF export on
-#   a small plan fails on its own instead of taking the API down with it.
-# - Keep Chromium small: one renderer, no GPU process, small V8 heap.
+# Installed in place of Playwright's chrome-headless-shell (used only for PDF export).
+# - PDF export needs about 1 GB of memory in total. On a smaller service (Railway's
+#   0.5 GB Free/Trial plans) starting Chromium gets the whole app OOM-killed, so it
+#   refuses to start there and the export fails with an error instead.
+#   Set CHROMIUM_MIN_MEMORY_MB=0 to skip this check.
+# - Keeps Chromium small: one renderer, no GPU process, small V8 heap.
 #   CHROMIUM_EXTRA_FLAGS replaces these flags if you need different ones.
+min_mb="${CHROMIUM_MIN_MEMORY_MB:-700}"
+lim="$(cat /sys/fs/cgroup/memory.max 2>/dev/null || echo max)"
+case "$lim" in
+  ''|max|*[!0-9]*) ;;
+  *)
+    if [ "$min_mb" -gt 0 ] && [ "$lim" -lt $((min_mb * 1024 * 1024)) ]; then
+      echo "PDF export needs about 1 GB of memory; this service has $((lim / 1048576)) MB. Raise the service's memory limit (Railway: Settings > Resources) to use PDF export." >&2
+      exit 1
+    fi ;;
+esac
 echo 1000 > /proc/self/oom_score_adj 2>/dev/null || true
 exec "$(dirname "$0")/chrome-headless-shell.real" \
   ${CHROMIUM_EXTRA_FLAGS:---disable-gpu --disable-dev-shm-usage --renderer-process-limit=1 --disable-features=site-per-process --js-flags=--max-old-space-size=64} "$@"
