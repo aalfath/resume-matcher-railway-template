@@ -49,7 +49,7 @@ fi
 export LOG_LEVEL="${LOG_LEVEL:-INFO}"
 # Small-plan friendly (Railway Free/Trial: 0.5 GB RAM, 1 vCPU per service).
 export MALLOC_ARENA_MAX="${MALLOC_ARENA_MAX:-2}"
-export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=192}"
+export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=128 --max-semi-space-size=2}"
 
 AUTH_PASSWORD_HASH="$(printf '%s' "$pw" | caddy hash-password)"
 pw=""
