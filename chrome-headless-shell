@@ -1,6 +1,9 @@
 #!/bin/sh
-# Wrapper installed in place of Playwright's chrome-headless-shell: adds flags that
-# keep PDF export inside Railway's 0.5 GB Free/Trial plan (one renderer, one GPU-less
-# utility process, small V8 heap). Remove CHROMIUM_EXTRA_FLAGS overrides to undo.
+# Installed in place of Playwright's chrome-headless-shell (PDF export).
+# - Ask the kernel to kill Chromium first when memory runs out, so a PDF export on
+#   a small plan fails on its own instead of taking the API down with it.
+# - Keep Chromium small: one renderer, no GPU process, small V8 heap.
+#   CHROMIUM_EXTRA_FLAGS replaces these flags if you need different ones.
+echo 1000 > /proc/self/oom_score_adj 2>/dev/null || true
 exec "$(dirname "$0")/chrome-headless-shell.real" \
-  ${CHROMIUM_EXTRA_FLAGS:---single-process --no-zygote --disable-gpu --disable-dev-shm-usage --renderer-process-limit=1 --js-flags=--max-old-space-size=96} "$@"
+  ${CHROMIUM_EXTRA_FLAGS:---disable-gpu --disable-dev-shm-usage --renderer-process-limit=1 --disable-features=site-per-process --js-flags=--max-old-space-size=64} "$@"
