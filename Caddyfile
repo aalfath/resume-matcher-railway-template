@@ -1,0 +1,31 @@
+# Public front for Resume Matcher on Railway. The app itself listens only on
+# 127.0.0.1 (Next.js on 3000, API on 8000); everything except /healthz needs
+# the password from the AUTH_PASSWORD variable.
+{
+	admin off
+	auto_https off
+	persist_config off
+	servers {
+		trusted_proxies static private_ranges
+	}
+}
+
+:{$PORT} {
+	# Railway's health check, without a password. It answers only when both the
+	# web app and the API behind it are up.
+	handle /healthz {
+		rewrite * /api/v1/health
+		reverse_proxy 127.0.0.1:3000 {
+			header_up Host 127.0.0.1:3000
+		}
+	}
+
+	handle {
+		basic_auth {
+			{$AUTH_USERNAME} {$AUTH_PASSWORD_HASH}
+		}
+		reverse_proxy 127.0.0.1:3000 {
+			flush_interval -1
+		}
+	}
+}
